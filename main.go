@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -33,7 +34,7 @@ func main() {
 		<body>
 			<div id="globeViz"></div>
 			<script>
-			  fetch('%s').then(res => res.json()).then(places => {
+			  fetch('%s/locations.geojson').then(res => res.json()).then(places => {
 			  	const world = Globe()
 			  		.globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
 			  		.backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
@@ -53,7 +54,7 @@ func main() {
 			</script>
 		</body>
 		</html>
-	`, "http://localhost:9999/locations.geojson")
+	`, os.Getenv("SELF_URL"))
 	})
 
 	fmt.Println("Server listening on port 9999")
