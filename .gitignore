@@ -24,7 +24,7 @@ go.work
 *.secrets.*
 
 # Outputs
-geolocations.geojson
+*.geojson
 nginx-logs.json
 *GeoLite*
 

@@ -2,10 +2,16 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
+	"sync"
+	"time"
+
+	"github.com/elastic/go-elasticsearch/v7"
 )
 
 func getIpFromLog(log string) string {
@@ -41,4 +47,94 @@ func getIpDataGeoLocationFromIp(ip string) IpDataGeoLocation {
 	}
 
 	return res.GeoLocation
+}
+
+func updateGeoLocations() {
+	cfg := elasticsearch.Config{
+		Addresses: []string{
+			"",
+		},
+		Username: "",
+		Password: "",
+	}
+	es, _ := elasticsearch.NewClient(cfg)
+	res, _ := es.Search(
+		es.Search.WithBody(strings.NewReader(`
+		{
+			"from" : 0, 
+			"size" : 1000,
+			"query": {
+				"match" : {
+					"kubernetes.labels.app_kubernetes_io/name": "ingress-nginx"
+				}
+			},
+			"sort" : [
+	  		{ "@timestamp" : "desc" }
+			]
+		}
+	  `)),
+
+		es.Search.WithPretty(),
+	)
+	defer res.Body.Close()
+
+	var sr searchResult
+	err := json.NewDecoder(res.Body).Decode(&sr)
+	if err != nil {
+		fmt.Println(err)
+		time.Sleep(5 * time.Second)
+		return
+	}
+
+	geoLocationEvidence := map[IpDataGeoLocation]int{}
+
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	wg.Add(len(sr.Hits.Hits))
+
+	for _, h := range sr.Hits.Hits {
+		go func(v hit) {
+			ip := getIpFromLog(v.Source.Log)
+			geolocation := getIpDataGeoLocationFromIp(ip)
+			if geolocation.Latitude != 0 {
+				mu.Lock()
+				geoLocationEvidence[geolocation]++
+				mu.Unlock()
+			}
+			wg.Done()
+		}(h)
+	}
+	wg.Wait()
+
+	geoJson := GeoJson{
+		Type:     "FeatureCollection",
+		Features: []GeoJsonFeature{},
+	}
+
+	for gl, qty := range geoLocationEvidence {
+		geoJsonFeature := GeoJsonFeature{
+			Type: "Pointer",
+			Properties: GeoJsonProperty{
+				Latitude:  gl.Latitude,
+				Longitude: gl.Longitude,
+				PopMax:    qty * 1000000,
+				Name:      gl.CityName,
+			},
+		}
+		geoJson.Features = append(geoJson.Features, geoJsonFeature)
+	}
+
+	file, err := os.Create("locations.geojson")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	err = encoder.Encode(geoJson)
+	if err != nil {
+		fmt.Println(err)
+		time.Sleep(5 * time.Second)
+		return
+	}
 }
