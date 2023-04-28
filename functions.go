@@ -2,44 +2,42 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"regexp"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/elastic/go-elasticsearch/v7"
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/rs/zerolog/log"
 )
 
 func verifyEnv() {
 	esHost := os.Getenv("ELASTICSEARCH_HOST")
 	if esHost == "" {
-		log.Fatal("Environment variable ELASTICSEARCH_HOST is not set")
+		log.Fatal().Msg("verifyEnv - Can not find environment variable ELASTICSEARCH_HOST is not set")
 	}
 
 	esUser := os.Getenv("ELASTICSEARCH_USER")
 	if esUser == "" {
-		log.Fatal("Environment variable ELASTICSEARCH_USER is not set")
+		log.Fatal().Msg("verifyEnv - Can not find environment variable ELASTICSEARCH_USER is not set")
 	}
 
 	esPassword := os.Getenv("ELASTICSEARCH_PASSWORD")
 	if esPassword == "" {
-		log.Fatal("Environment variable ELASTICSEARCH_PASSWORD is not set")
+		log.Fatal().Msg("verifyEnv - Can not find environment variable ELASTICSEARCH_PASSWORD is not set")
 	}
 
 	selfURL := os.Getenv("SELF_URL")
 	if selfURL == "" {
-		log.Fatal("Environment variable SELF_URL is not set")
+		log.Fatal().Msg("verifyEnv - Can not find environment variable SELF_URL is not set")
 	}
 
 	esQuery := os.Getenv("ELASTICSEARCH_QUERY")
 	if esQuery == "" {
-		log.Fatal("Environment variable ELASTICSEARCH_QUERY is not set")
+		log.Fatal().Msg("verifyEnv - Can not find environment variable ELASTICSEARCH_QUERY is not set")
 	}
 }
 
@@ -56,23 +54,23 @@ func getIpDataGeoLocationFromIp(ip string) IpDataGeoLocation {
 
 	req, err := http.NewRequest("POST", "https://www.iplocation.net/get-ipdata", strings.NewReader(values.Encode()))
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("getIpDataGeoLocationFromIp - Can not create request client")
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		log.Error().Err(err).Msg("getIpDataGeoLocationFromIp - Can not request iplocation.net")
+		return IpDataGeoLocation{}
 	}
 	defer resp.Body.Close()
-
-	// io.Copy(os.Stdout, resp.Body)
 
 	var res ipData
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
-		panic(err)
+		log.Error().Err(err).Msg("getIpDataGeoLocationFromIp - Can not decode iplocation.net response into ipData struct")
+		return IpDataGeoLocation{}
 	}
 
 	return res.GeoLocation
@@ -95,9 +93,7 @@ func updateGeoLocations() {
 	var sr searchResult
 	err := json.NewDecoder(res.Body).Decode(&sr)
 	if err != nil {
-		fmt.Println(err)
-		time.Sleep(5 * time.Second)
-		return
+		log.Fatal().Err(err).Msg("updateGeoLocations - Can not decode Elasticsearch response into searchResult struct")
 	}
 
 	geoLocationEvidence := map[IpDataGeoLocation]int{}
@@ -140,15 +136,13 @@ func updateGeoLocations() {
 
 	file, err := os.Create("locations.geojson")
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("updateGeoLocations - Can not create locations.geojson file")
 	}
 	defer file.Close()
 
 	encoder := json.NewEncoder(file)
 	err = encoder.Encode(geoJson)
 	if err != nil {
-		fmt.Println(err)
-		time.Sleep(5 * time.Second)
-		return
+		log.Fatal().Err(err).Msg("updateGeoLocations - Can not write into locations.geojson file")
 	}
 }

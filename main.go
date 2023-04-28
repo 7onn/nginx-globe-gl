@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -69,6 +70,8 @@ func main() {
 		}
 	})
 
-	fmt.Println("Server listening on port 9999")
-	log.Fatal(http.ListenAndServe(":9999", nil))
+	log.Info().Msg("Server listening on port 9999")
+	if err := http.ListenAndServe(":9999", nil); err != nil {
+		log.Fatal().Err(err).Msg("Startup failed")
+	}
 }
