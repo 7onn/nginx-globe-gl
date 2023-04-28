@@ -6,3 +6,5 @@ github.com/elastic/go-elasticsearch/v7 v7.16.1-0.20211220092752-564732cbb96a h1:
 github.com/elastic/go-elasticsearch/v7 v7.16.1-0.20211220092752-564732cbb96a/go.mod h1:OJ4wdbtDNk5g503kvlHLyErCgQwwzmDtaFC4XyOxXA4=
 github.com/elastic/go-elasticsearch/v8 v8.5.1-0.20230220130617-c22e0fca4f3b h1:8nTsrkpUTR66ycV41oOHjqsHyzHczovKDmHSLI9Vgdo=
 github.com/elastic/go-elasticsearch/v8 v8.5.1-0.20230220130617-c22e0fca4f3b/go.mod h1:Usvydt+x0dv9a1TzEUaovqbJor8rmOHy5dSmPeMAE2k=
+github.com/joho/godotenv v1.5.1 h1:7eLL/+HRGLY0ldzfGMeQkb7vMd0as4CfYvUVzLqw0N0=
+github.com/joho/godotenv v1.5.1/go.mod h1:f4LDr5Voq0i2e/R5DDNOoa2zzDfwtkZa6DnEwAbqwq4=

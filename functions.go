@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,7 +13,35 @@ import (
 	"time"
 
 	"github.com/elastic/go-elasticsearch/v7"
+	_ "github.com/joho/godotenv/autoload"
 )
+
+func verifyEnv() {
+	esHost := os.Getenv("ELASTICSEARCH_HOST")
+	if esHost == "" {
+		log.Fatal("Environment variable ELASTICSEARCH_HOST is not set")
+	}
+
+	esUser := os.Getenv("ELASTICSEARCH_USER")
+	if esUser == "" {
+		log.Fatal("Environment variable ELASTICSEARCH_USER is not set")
+	}
+
+	esPassword := os.Getenv("ELASTICSEARCH_PASSWORD")
+	if esPassword == "" {
+		log.Fatal("Environment variable ELASTICSEARCH_PASSWORD is not set")
+	}
+
+	selfURL := os.Getenv("SELF_URL")
+	if selfURL == "" {
+		log.Fatal("Environment variable SELF_URL is not set")
+	}
+
+	esQuery := os.Getenv("ELASTICSEARCH_QUERY")
+	if esQuery == "" {
+		log.Fatal("Environment variable ELASTICSEARCH_QUERY is not set")
+	}
+}
 
 func getIpFromLog(log string) string {
 	re := regexp.MustCompile(`\d+\.\d+\.\d+\.\d+`) // Compile a regular expression to match words
@@ -52,29 +81,14 @@ func getIpDataGeoLocationFromIp(ip string) IpDataGeoLocation {
 func updateGeoLocations() {
 	cfg := elasticsearch.Config{
 		Addresses: []string{
-			"",
+			os.Getenv("ELASTICSEARCH_HOST"),
 		},
-		Username: "",
-		Password: "",
+		Username: os.Getenv("ELASTICSEARCH_USER"),
+		Password: os.Getenv("ELASTICSEARCH_PASSWORD"),
 	}
 	es, _ := elasticsearch.NewClient(cfg)
 	res, _ := es.Search(
-		es.Search.WithBody(strings.NewReader(`
-		{
-			"from" : 0, 
-			"size" : 1000,
-			"query": {
-				"match" : {
-					"kubernetes.labels.app_kubernetes_io/name": "ingress-nginx"
-				}
-			},
-			"sort" : [
-	  		{ "@timestamp" : "desc" }
-			]
-		}
-	  `)),
-
-		es.Search.WithPretty(),
+		es.Search.WithBody(strings.NewReader(os.Getenv("ELASTICSEARCH_QUERY"))),
 	)
 	defer res.Body.Close()
 

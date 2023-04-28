@@ -2,11 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 )
 
 func main() {
+	verifyEnv()
+
 	go func() {
 		for {
 			updateGeoLocations()
@@ -54,5 +57,5 @@ func main() {
 	})
 
 	fmt.Println("Server listening on port 9999")
-	http.ListenAndServe(":9999", nil)
+	log.Fatal(http.ListenAndServe(":9999", nil))
 }
