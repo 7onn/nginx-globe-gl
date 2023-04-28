@@ -57,6 +57,18 @@ func main() {
 	`, os.Getenv("SELF_URL"))
 	})
 
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "alive")
+	})
+
+	http.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		if _, err := os.Stat("locations.geojson"); err == nil {
+			fmt.Fprintf(w, "ready")
+		} else {
+			http.NotFound(w, r)
+		}
+	})
+
 	fmt.Println("Server listening on port 9999")
 	log.Fatal(http.ListenAndServe(":9999", nil))
 }
