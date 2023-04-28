@@ -25,6 +25,8 @@ go.work
 
 # Outputs
 geolocations.geojson
+nginx-logs.json
+*GeoLite*
 
 # Temporary files
 tmp/

@@ -1,5 +1,6 @@
 package main
 
+// elasticsearch logs
 type source struct {
 	Log string `json:"log"`
 }
@@ -15,36 +16,30 @@ type searchResult struct {
 	Hits hits `json:"hits"`
 }
 
+// www.iplocation.net
 type ipData struct {
-	GeoLocation geoLocation `json:"res"`
+	GeoLocation IpDataGeoLocation `json:"res"`
 }
 
-type geoLocation struct {
-	Latitude    float64 `json:"latitude"`
-	Longitude   float64 `json:"longitude"`
+type IpDataGeoLocation struct {
+	Latitude    float32 `json:"latitude"`
+	Longitude   float32 `json:"longitude"`
 	CityName    string  `json:"cityName"`
 	CountryName string  `json:"countryName"`
 	CountryCode string  `json:"countryCode"`
 }
 
-type GlobeGLFileSchema struct {
-	GeoLocations []geoLocation
-}
-
+// geojson
 type GeoJsonProperty struct {
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
-}
-
-type GeoJsonGeometry struct {
-	Type        string    `json:"type"`
-	Coordinates []float64 `json:"coordinates"`
+	Name      string  `json:"name"`
+	Latitude  float32 `json:"latitude"`
+	Longitude float32 `json:"longitude"`
+	PopMax    int     `json:"pop_max"`
 }
 
 type GeoJsonFeature struct {
 	Type       string          `json:"type"`
 	Properties GeoJsonProperty `json:"properties"`
-	Geometry   GeoJsonGeometry `json:"geometry"`
 }
 
 type GeoJson struct {

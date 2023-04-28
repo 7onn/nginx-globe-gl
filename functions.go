@@ -13,7 +13,7 @@ func getIpFromLog(log string) string {
 	return re.FindString(log)
 }
 
-func geoLocationFromIp(ip string) geoLocation {
+func getIpDataGeoLocationFromIp(ip string) IpDataGeoLocation {
 	values := url.Values{}
 	values.Set("ip", ip)
 	values.Set("source", "ip2location")
@@ -23,7 +23,6 @@ func geoLocationFromIp(ip string) geoLocation {
 	if err != nil {
 		panic(err)
 	}
-
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	client := &http.Client{}
