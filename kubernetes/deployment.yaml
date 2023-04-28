@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: &app nginx-globe-gl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: *app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: *app
+    spec:
+      containers:
+      - name: *app
+        image: devbytom/nginx-globe-gl
+        ports:
+        - containerPort: 9999
+          protocol: tcp
+        env:
+        - name: SELF_URL
+          valueFrom:
+            secretKeyRef:
+              name: nginx-globe-gl
+              key: SELF_URL
+        - name: ELASTICSEARCH_HOST
+          valueFrom:
+            secretKeyRef:
+              name: nginx-globe-gl
+              key: ELASTICSEARCH_HOST
+        - name: ELASTICSEARCH_USER
+          valueFrom:
+            secretKeyRef:
+              name: nginx-globe-gl
+              key: ELASTICSEARCH_USER
+        - name: ELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: nginx-globe-gl
+              key: ELASTICSEARCH_PASSWORD
+        - name: ELASTICSEARCH_QUERY
+          valueFrom:
+            secretKeyRef:
+              name: nginx-globe-gl
+              key: ELASTICSEARCH_QUERY
