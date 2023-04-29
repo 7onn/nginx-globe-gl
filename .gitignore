@@ -23,11 +23,13 @@ go.work
 # Secrets
 *.secrets.*
 .env
+GeoIP.conf
 
 # Outputs
 *.geojson
 nginx-logs.json
 *GeoLite*
+
 
 # Temporary files
 tmp/

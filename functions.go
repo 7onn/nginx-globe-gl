@@ -2,8 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"net/http"
-	"net/url"
+	"net"
 	"os"
 	"regexp"
 	"strings"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/elastic/go-elasticsearch/v7"
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/oschwald/geoip2-golang"
 	"github.com/rs/zerolog/log"
 )
 
@@ -47,33 +47,30 @@ func getIpFromLog(log string) string {
 }
 
 func getIpDataGeoLocationFromIp(ip string) IpDataGeoLocation {
-	values := url.Values{}
-	values.Set("ip", ip)
-	values.Set("source", "ip2location")
-	values.Set("ipv", "4")
-
-	req, err := http.NewRequest("POST", "https://www.iplocation.net/get-ipdata", strings.NewReader(values.Encode()))
+	db, err := geoip2.Open("GeoLite2-City.mmdb")
 	if err != nil {
-		log.Fatal().Err(err).Msg("getIpDataGeoLocationFromIp - Can not create request client")
+		log.Fatal().Err(err).Msg("getIpDataGeoLocationFromIp - Failed to open GeoIP2-City.mmdb")
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	defer db.Close()
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	parsedIp := net.ParseIP(ip)
+	record, err := db.City(parsedIp)
 	if err != nil {
-		log.Error().Err(err).Msg("getIpDataGeoLocationFromIp - Can not request iplocation.net")
-		return IpDataGeoLocation{}
+		log.Fatal().Err(err).Msg("getIpDataGeoLocationFromIp - Failed to open GeoIP2-City.mmdb")
 	}
-	defer resp.Body.Close()
 
-	var res ipData
-	err = json.NewDecoder(resp.Body).Decode(&res)
-	if err != nil {
-		log.Error().Err(err).Msg("getIpDataGeoLocationFromIp - Can not decode iplocation.net response into ipData struct")
+	if record.City.Names["en"] == "" {
 		return IpDataGeoLocation{}
 	}
 
-	return res.GeoLocation
+	return IpDataGeoLocation{
+		CountryCode: record.Country.IsoCode,
+		CountryName: record.Country.Names["en"],
+		CityName:    record.City.Names["en"],
+		Latitude:    float32(record.Location.Latitude),
+		Longitude:   float32(record.Location.Longitude),
+	}
+
 }
 
 func updateGeoLocations() {
@@ -145,4 +142,9 @@ func updateGeoLocations() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("updateGeoLocations - Can not write into locations.geojson file")
 	}
+}
+
+func prettyPrint(i interface{}) string {
+	s, _ := json.MarshalIndent(i, "", "\t")
+	return string(s)
 }
