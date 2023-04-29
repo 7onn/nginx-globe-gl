@@ -46,7 +46,7 @@ func getIpFromLog(log string) string {
 	return re.FindString(log)
 }
 
-func getIpDataGeoLocationFromIp(ip string) IpDataGeoLocation {
+func getCityFromIp(ip string, cities map[string]City) City {
 	db, err := geoip2.Open("GeoLite2-City.mmdb")
 	if err != nil {
 		log.Fatal().Err(err).Msg("getIpDataGeoLocationFromIp - Failed to open GeoIP2-City.mmdb")
@@ -59,18 +59,25 @@ func getIpDataGeoLocationFromIp(ip string) IpDataGeoLocation {
 		log.Fatal().Err(err).Msg("getIpDataGeoLocationFromIp - Failed to open GeoIP2-City.mmdb")
 	}
 
-	if record.City.Names["en"] == "" {
-		return IpDataGeoLocation{}
+	cityName := record.City.Names["en"]
+	if cityName == "" {
+		return City{}
 	}
 
-	return IpDataGeoLocation{
-		CountryCode: record.Country.IsoCode,
-		CountryName: record.Country.Names["en"],
-		CityName:    record.City.Names["en"],
-		Latitude:    float32(record.Location.Latitude),
-		Longitude:   float32(record.Location.Longitude),
+	// Prevent extremely large labels by setting the max evidence to 10
+	var e int
+	if cities[cityName].Evidence < 10 {
+		e = cities[cityName].Evidence + 1
+	} else {
+		e = cities[cityName].Evidence
 	}
 
+	return City{
+		CityName:  cityName,
+		Latitude:  float32(record.Location.Latitude),
+		Longitude: float32(record.Location.Longitude),
+		Evidence:  e,
+	}
 }
 
 func updateGeoLocations() {
@@ -93,21 +100,20 @@ func updateGeoLocations() {
 		log.Fatal().Err(err).Msg("updateGeoLocations - Can not decode Elasticsearch response into searchResult struct")
 	}
 
-	geoLocationEvidence := map[IpDataGeoLocation]int{}
-
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	wg.Add(len(sr.Hits.Hits))
 
+	cities := map[string]City{}
 	for _, h := range sr.Hits.Hits {
 		go func(v hit) {
 			ip := getIpFromLog(v.Source.Log)
-			geolocation := getIpDataGeoLocationFromIp(ip)
-			if geolocation.Latitude != 0 {
-				mu.Lock()
-				geoLocationEvidence[geolocation]++
-				mu.Unlock()
+			mu.Lock()
+			city := getCityFromIp(ip, cities)
+			if city.Latitude != 0 {
+				cities[city.CityName] = city
 			}
+			mu.Unlock()
 			wg.Done()
 		}(h)
 	}
@@ -118,14 +124,14 @@ func updateGeoLocations() {
 		Features: []GeoJsonFeature{},
 	}
 
-	for gl, qty := range geoLocationEvidence {
+	for _, data := range cities {
 		geoJsonFeature := GeoJsonFeature{
 			Type: "Pointer",
 			Properties: GeoJsonProperty{
-				Latitude:  gl.Latitude,
-				Longitude: gl.Longitude,
-				PopMax:    qty * 1000000,
-				Name:      gl.CityName,
+				Latitude:  data.Latitude,
+				Longitude: data.Longitude,
+				PopMax:    data.Evidence * 500000,
+				Name:      data.CityName,
 			},
 		}
 		geoJson.Features = append(geoJson.Features, geoJsonFeature)

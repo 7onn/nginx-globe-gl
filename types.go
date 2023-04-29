@@ -15,12 +15,11 @@ type searchResult struct {
 	Hits hits `json:"hits"`
 }
 
-type IpDataGeoLocation struct {
-	Latitude    float32 `json:"latitude"`
-	Longitude   float32 `json:"longitude"`
-	CityName    string  `json:"cityName"`
-	CountryName string  `json:"countryName"`
-	CountryCode string  `json:"countryCode"`
+type City struct {
+	Latitude  float32 `json:"latitude"`
+	Longitude float32 `json:"longitude"`
+	CityName  string  `json:"cityName"`
+	Evidence  int     `json:"evidence"`
 }
 
 type GeoJsonProperty struct {
