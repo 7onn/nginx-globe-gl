@@ -1,6 +1,5 @@
 package main
 
-// elasticsearch logs
 type source struct {
 	Log string `json:"log"`
 }
@@ -16,11 +15,6 @@ type searchResult struct {
 	Hits hits `json:"hits"`
 }
 
-// www.iplocation.net
-type ipData struct {
-	GeoLocation IpDataGeoLocation `json:"res"`
-}
-
 type IpDataGeoLocation struct {
 	Latitude    float32 `json:"latitude"`
 	Longitude   float32 `json:"longitude"`
@@ -29,7 +23,6 @@ type IpDataGeoLocation struct {
 	CountryCode string  `json:"countryCode"`
 }
 
-// geojson
 type GeoJsonProperty struct {
 	Name      string  `json:"name"`
 	Latitude  float32 `json:"latitude"`

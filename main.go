@@ -35,23 +35,29 @@ func main() {
 		<body>
 			<div id="globeViz"></div>
 			<script>
-			  fetch('%s/locations.geojson').then(res => res.json()).then(places => {
-			  	const world = Globe()
-			  		.globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
-			  		.backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
-			  		.labelsData(places.features)
-			  		.labelLat(d => d.properties.latitude)
-			  		.labelLng(d => d.properties.longitude)
-			  		.labelText(d => d.properties.name)
-			  		.labelSize(d => Math.sqrt(d.properties.pop_max) * 4e-4)
-			  		.labelDotRadius(d => Math.sqrt(d.properties.pop_max) * 4e-4)
-			  		.labelColor(() => 'rgba(255, 165, 0, 0.75)')
-			  		.labelResolution(2)
-			  	(document.getElementById('globeViz'))
+                          function updateGlobe() {
+                            fetch('%s/locations.geojson').then(res => res.json()).then(places => {
+			      const world = Globe()
+			      	.globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
+			      	.backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
+			      	.labelsData(places.features)
+			      	.labelLat(d => d.properties.latitude)
+			      	.labelLng(d => d.properties.longitude)
+			      	.labelText(d => d.properties.name)
+			      	.labelSize(d => Math.sqrt(d.properties.pop_max) * 4e-4)
+			      	.labelDotRadius(d => Math.sqrt(d.properties.pop_max) * 4e-4)
+			      	.labelColor(() => 'rgba(255, 165, 0, 0.75)')
+			      	.labelResolution(2)
+			      (document.getElementById('globeViz'))
 
-			  	world.controls().autoRotate = true
-			  	world.controls().autoRotateSpeed = 3
-			  });				
+			      world.controls().autoRotate = true
+			      world.controls().autoRotateSpeed = 3
+			    });
+
+                            setTimeout(() => { updateGlobe() }, 60 * 1000);
+                          }
+
+                          updateGlobe()
 			</script>
 		</body>
 		</html>
@@ -70,8 +76,8 @@ func main() {
 		}
 	})
 
-	log.Info().Msg("Server listening on port 9999")
+	log.Info().Msg("Starting server on port 9999")
 	if err := http.ListenAndServe(":9999", nil); err != nil {
-		log.Fatal().Err(err).Msg("Startup failed")
+		log.Fatal().Err(err).Msg("Server startup failed")
 	}
 }
