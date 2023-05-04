@@ -88,14 +88,22 @@ func updateGeoLocations() {
 		Username: os.Getenv("ELASTICSEARCH_USER"),
 		Password: os.Getenv("ELASTICSEARCH_PASSWORD"),
 	}
-	es, _ := elasticsearch.NewClient(cfg)
-	res, _ := es.Search(
+	es, err := elasticsearch.NewClient(cfg)
+	if err != nil {
+		log.Fatal().Err(err).Msg("updateGeoLocations - Can not create Elasticsearch client")
+	}
+
+	res, err := es.Search(
 		es.Search.WithBody(strings.NewReader(os.Getenv("ELASTICSEARCH_QUERY"))),
 	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("updateGeoLocations - Can not query Elasticsearch")
+	}
+
 	defer res.Body.Close()
 
 	var sr searchResult
-	err := json.NewDecoder(res.Body).Decode(&sr)
+	err = json.NewDecoder(res.Body).Decode(&sr)
 	if err != nil {
 		log.Fatal().Err(err).Msg("updateGeoLocations - Can not decode Elasticsearch response into searchResult struct")
 	}
